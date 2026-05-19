@@ -608,7 +608,7 @@ function generateCharts(data, fromFile = false) {
 }
 
 /* ───────────────────────────────────────────────
-   Operation charts (unchanged)
+   Operation charts
 ─────────────────────────────────────────────── */
 function createOperationCharts(data) {
     const container = document.getElementById('chartsContainer');
@@ -625,7 +625,8 @@ function createOperationCharts(data) {
         { key:'updateResult', label:'Update' },
         { key:'mergeResult', label:'Merge' },
         { key:'serializeResult', label:'Serialize' },
-        { key:'deserializeResult', label:'Deserialize' }
+        { key:'deserializeResult', label:'Deserialize' },
+        { key:'cardinalityResult', label:'Cardinality', timeField:'time'}
     ];
 
     operations.forEach((op, idx) => {
@@ -638,7 +639,12 @@ function createOperationCharts(data) {
             const sorted = [...grouped[t]].sort((a,b)=>a.sketchSize-b.sketchSize);
             return {
                 label: t,
-                data: sorted.map(r => ({ x: r.sketchSize, y: r[op.key].avgOpTimeNs })),
+                data: sorted.map(r => ({
+                    x: r.sketchSize,
+                    y: op.timeField
+                        ? r[op.key]?.[op.timeField]
+                        : r[op.key]?.avgOpTimeNs
+                })),
                 borderColor: color(i),
                 backgroundColor: color(i,0.2),
                 tension: 0.4
