@@ -1,0 +1,58 @@
+{
+  "benchmarks": [
+    {
+      "id": 1,
+      "name": "Benchmark Run #1 - Baseline (JVM)",
+      "file": "1.json",
+      "date": "2025-01-15",
+      "isNative": false,
+      "cpu": "Intel Core i7-12700K @ 3.60GHz (12 cores / 20 threads)",
+      "memory": "32 GB DDR5-4800",
+      "os": "Ubuntu 22.04 LTS",
+      "jvm": "OpenJDK 21.0.2 (Temurin)",
+      "jvmFlags": "-Xmx8g -XX:+UseG1GC",
+      "notes": "Baseline run with default JVM settings"
+    },
+    {
+      "id": 2,
+      "name": "Benchmark Run #2 - High Heap (JVM)",
+      "file": "2.json",
+      "date": "2025-01-20",
+      "isNative": false,
+      "cpu": "Intel Core i7-12700K @ 3.60GHz (12 cores / 20 threads)",
+      "memory": "32 GB DDR5-4800",
+      "os": "Ubuntu 22.04 LTS",
+      "jvm": "OpenJDK 21.0.2 (Temurin)",
+      "jvmFlags": "-Xmx16g -XX:+UseZGC",
+      "notes": "Run with increased heap size to reduce GC pressure"
+    },
+    {
+      "id": 3,
+      "name": "Benchmark Run #3 – Native C++ Baseline",
+      "file": "3.json",
+      "date": "2025-02-01",
+      "isNative": true,
+      "cpu": "Intel Core i7-12700K @ 3.60GHz (12 cores / 20 threads)",
+      "memory": "32 GB DDR5-4800",
+      "os": "Ubuntu 22.04 LTS",
+      "compiler": "g++ 13.2.0",
+      "cstd": "c++20",
+      "compilerOptions": "-O3 -march=native -flto",
+      "notes": "Native build with full optimisations"
+    },
+    {
+      "id": 4,
+      "name": "Benchmark Run #4 - Native Clang",
+      "file": "4.json",
+      "date": "2025-02-10",
+      "isNative": true,
+      "cpu": "AMD Ryzen 9 7950X @ 4.50GHz (16 cores / 32 threads)",
+      "memory": "64 GB DDR5-6000",
+      "os": "Arch Linux (kernel 6.8)",
+      "compiler": "clang++ 17.0.6",
+      "cstd": "c++23",
+      "compilerOptions": "-O2 -stdlib=libc++ -ffast-math",
+      "notes": "Clang build targeting c++23 with libc++"
+    }
+  ]
+}

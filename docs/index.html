@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sketch Benchmark Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.1.0/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #555;
+            text-align: center;
+        }
+        .input-section {
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-wrapper h3 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+        }
+        .operation-charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .memory-charts {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .normal-cavas {
+            max-height: 400px;
+        }
+        .medium-canvas {
+            max-height: 500px;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #fee;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        :root {
+            --bg: #f5f5f5;
+            --text: #222;
+            --card-bg: #fff;
+            --border: #ddd;
+            --btn-bg: #007bff;
+            --btn-text: #fff;
+        }
+        body.dark {
+            --bg: #121212;
+            --text: #eaeaea;
+            --card-bg: #1e1e1e;
+            --border: #333;
+            --btn-bg: #2196f3;
+            --btn-text: #f5f5f5;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+        }
+        .chart-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+        }
+        button {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+        }
+        /* ── Tab bar ── */
+        .tab-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            background: none;
+            color: var(--text);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            padding: 8px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: -2px;
+            margin-top: 0;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+            font-weight: 700;
+        }
+        body.dark .tab-btn.active {
+            color: #2196f3;
+            border-bottom-color: #2196f3;
+        }
+        .tab-btn:hover:not(.active) { opacity: 0.7; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        /* ── Preset section ── */
+        .preset-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 14px;
+            min-width: 280px;
+            cursor: pointer;
+        }
+        /* ── Metadata card ── */
+        .meta-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: none;
+        }
+        .meta-card.visible { display: block; }
+        .meta-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 15px;
+            color: #007bff;
+        }
+        body.dark .meta-card h3 { color: #2196f3; }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 8px 20px;
+        }
+        .meta-item {
+            display: flex;
+            gap: 8px;
+            font-size: 13px;
+            align-items: flex-start;
+        }
+        .meta-label {
+            font-weight: 700;
+            color: #1a5f8a;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+        body.dark .meta-label { color: #7ec8f7; }
+        .meta-value { color: var(--text); }
+        .meta-notes {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #555;
+            font-style: italic;
+            border-top: 1px solid var(--border);
+            padding-top: 8px;
+        }
+        body.dark .meta-notes { color: #aaa; }
+        /* status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #e8f4fd;
+            color: #1a5f8a;
+            border: 1px solid #b3d9f7;
+        }
+        .status-badge.loading { background: #fff8e1; color: #856404; border-color: #ffc107; }
+        .status-badge.error   { background: #fee; color: red; border-color: #f5c6cb; }
+        body.dark .status-badge          { background: #1a3a52; color: #7ec8f7; border-color: #2a6496; }
+        body.dark .status-badge.loading  { background: #3a2f00; color: #ffd; border-color: #8a6d00; }
+        body.dark .status-badge.error    { background: #3a1a1a; color: #f88; border-color: #800; }
+        /* loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: #007bff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+        }
+        body.dark .spinner { border-top-color: #2196f3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>Sketch Benchmark Visualizer</h1>
+    <div style="text-align:right;margin-bottom:10px;">
+        <button id="themeToggle">🌙 Dark Mode</button>
+    </div>
+    <div class="input-section">
+        <!-- Tab bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="presetTab">📂 Preset Benchmarks</button>
+            <button class="tab-btn"        data-tab="pasteTab">📋 Paste JSON</button>
+            <button class="tab-btn"        data-tab="fileTab">🗂 Load File</button>
+        </div>
+
+        <!-- ── Tab: Preset benchmarks ── -->
+        <div class="tab-panel active" id="presetTab">
+            <div class="preset-header">
+                <select id="presetSelect">
+                    <option value="">— Loading presets… —</option>
+                </select>
+                <button id="loadPresetBtn" style="margin-top:0;" disabled>Load Benchmark</button>
+                <span id="presetStatus"></span>
+            </div>
+            <div class="meta-card" id="metaCard">
+                <h3 id="metaTitle">Benchmark Details</h3>
+                <div class="meta-grid" id="metaGrid"></div>
+                <div class="meta-notes" id="metaNotes" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- ── Tab: Paste JSON ── -->
+        <div class="tab-panel" id="pasteTab">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <textarea id="jsonInput" placeholder="Paste your benchmark JSON data here..."></textarea>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <button id="generateBtn">Generate Charts</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Tab: Load File ── -->
+        <div class="tab-panel" id="fileTab">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button id="loadBtn" style="margin-top:0;">📁 Choose JSON File</button>
+                <input id="fileInput" type="file" accept=".json" style="display:none;">
+                <span id="fileStatus"></span>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+    </div>
+    <div class="charts-container" id="chartsContainer"></div>
+    
+    <script>
+/* ────────────────────────────────────────────────
+   TAB SWITCHING
+──────────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+    });
+});
+
+/* ────────────────────────────────────────────────
+   PRESET BENCHMARK LOADER
+──────────────────────────────────────────────── */
+const METADATA_URL = '../benchmarks/metadata.json';
+const JSON_BASE    = '../benchmarks/json/';
+let metadataCache = null;
+
+async function loadMetadata() {
+    const sel    = document.getElementById('presetSelect');
+    const status = document.getElementById('presetStatus');
+    status.innerHTML = '<span class="status-badge loading"><span class="spinner"></span> Fetching metadata…</span>';
+    try {
+        const resp = await fetch(METADATA_URL, { cache: 'no-cache' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} - ${resp.statusText}`);
+        const meta = await resp.json();
+        metadataCache = meta;
+        sel.innerHTML = '<option value="">— Select a benchmark run —</option>';
+        (meta.benchmarks || []).forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = `[${b.date}] ${b.name}`;
+            sel.appendChild(opt);
+        });
+        status.innerHTML = `<span class="status-badge">${(meta.benchmarks||[]).length} benchmark(s) available</span>`;
+    } catch(err) {
+        sel.innerHTML = '<option value="">— Failed to load presets —</option>';
+        status.innerHTML = `<span class="status-badge error">⚠ ${err.message}</span>`;
+        console.error('Metadata load error:', err);
+    }
+}
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+    const val  = this.value;
+    const btn  = document.getElementById('loadPresetBtn');
+    const card = document.getElementById('metaCard');
+    if (!val || !metadataCache) {
+        btn.disabled = true;
+        card.classList.remove('visible');
+        return;
+    }
+    btn.disabled = false;
+    const benchmark = (metadataCache.benchmarks || []).find(b => String(b.id) === String(val));
+    if (!benchmark) return;
+
+    const grid  = document.getElementById('metaGrid');
+    const notes = document.getElementById('metaNotes');
+    const title = document.getElementById('metaTitle');
+
+    const commonFields = [
+        { label: '📅 Date',   key: 'date'   },
+        { label: '🖥 CPU',    key: 'cpu'    },
+        { label: '💾 Memory', key: 'memory' },
+        { label: '🐧 OS',     key: 'os'     },
+        { label: '📄 File',   key: 'file'   },
+    ];
+    const jvmFields = [
+        { label: '☕ JVM',       key: 'jvm'      },
+        { label: '🚩 JVM Flags', key: 'jvmFlags' },
+    ];
+    const nativeFields = [
+        { label: '⚙️ Compiler',         key: 'compiler'        },
+        { label: '📐 C++ Std',          key: 'cstd'            },
+        { label: '🔨 Compiler Options', key: 'compilerOptions' },
+    ];
+
+    const isNative = benchmark.isNative === true;
+    title.innerHTML =
+        `${benchmark.name} &nbsp;` +
+        `<span class="status-badge" style="font-size:11px;vertical-align:middle;">` +
+        (isNative ? '🔩 Native' : '☕ JVM') +
+        `</span>`;
+
+    const activeFields = [...commonFields, ...(isNative ? nativeFields : jvmFields)];
+    grid.innerHTML = '';
+    activeFields.forEach(f => {
+        if (benchmark[f.key] === undefined) return;
+        const div = document.createElement('div');
+        div.className = 'meta-item';
+        div.innerHTML = `<span class="meta-label">${f.label}</span>
+                         <span class="meta-value">${benchmark[f.key]}</span>`;
+        grid.appendChild(div);
+    });
+
+    const standardKeys = new Set([
+        'id', 'name', 'file', 'date', 'isNative',
+        'cpu', 'memory', 'os', 'notes',
+        'jvm', 'jvmFlags',
+        'compiler', 'cstd', 'compilerOptions',
+    ]);
+    Object.entries(benchmark).forEach(([k, v]) => {
+        if (standardKeys.has(k)) return;
+        const div = document.createElement('div');
+        div.className = 'meta-item';
+        div.innerHTML = `<span class="meta-label">🔧 ${k}</span>
+                         <span class="meta-value">${v}</span>`;
+        grid.appendChild(div);
+    });
+
+    if (benchmark.notes) {
+        notes.textContent = '📝 ' + benchmark.notes;
+        notes.style.display = 'block';
+    } else {
+        notes.style.display = 'none';
+    }
+    card.classList.add('visible');
+});
+
+document.getElementById('loadPresetBtn').addEventListener('click', async () => {
+    const val = document.getElementById('presetSelect').value;
+    if (!val || !metadataCache) return;
+    const benchmark = (metadataCache.benchmarks || []).find(b => String(b.id) === String(val));
+    if (!benchmark) return;
+
+    const status    = document.getElementById('presetStatus');
+    const container = document.getElementById('chartsContainer');
+    const errorDiv  = document.getElementById('error');
+    errorDiv.style.display = 'none';
+    container.innerHTML = `<div style="text-align:center;padding:40px;font-size:18px;">
+        <span class="spinner"></span> Loading <strong>${benchmark.name}</strong>…
+    </div>`;
+    status.innerHTML = '<span class="status-badge loading"><span class="spinner"></span> Fetching…</span>';
+    try {
+        const url  = JSON_BASE + benchmark.file;
+        const resp = await fetch(url, { cache: 'no-cache' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} - could not load ${benchmark.file}`);
+        status.innerHTML = '<span class="status-badge loading"><span class="spinner"></span> Parsing…</span>';
+        await new Promise(r => setTimeout(r, 30));
+        const data = await resp.json();
+        status.innerHTML = `<span class="status-badge">✔ Loaded ${benchmark.name}</span>`;
+        generateCharts(data, false);
+    } catch(err) {
+        container.innerHTML = '';
+        status.innerHTML = `<span class="status-badge error">⚠ ${err.message}</span>`;
+        errorDiv.textContent = 'Error loading preset: ' + err.message;
+        errorDiv.style.display = 'block';
+        console.error(err);
+    }
+});
+
+loadMetadata();
+
+// handle file loading and trigger charts
+document.getElementById("loadBtn").addEventListener("click", () => {
+  document.getElementById("fileInput").click();
+});
+
+document.getElementById("fileInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const errorDiv = document.getElementById("error");
+  const container = document.getElementById("chartsContainer");
+  const fileStatus = document.getElementById("fileStatus");
+  
+  // Show loading indicator for large files
+  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+  container.innerHTML = '<div style="text-align:center;padding:40px;font-size:18px;">Loading file... (' + 
+    fileSizeMB + ' MB)<br><small>Please wait, this may take a moment for large files...</small></div>';
+  
+  errorDiv.style.display = "none";
+  fileStatus.innerHTML = '<span class="status-badge loading"><span class="spinner"></span> Reading…</span>';
+  
+  const reader = new FileReader();
+  
+  reader.onload = (evt) => {
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+      try {
+        let text = evt.target.result;
+        
+        console.log("File loaded. Length:", text.length, "characters");
+        
+        // Strip BOM if present
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.slice(1);
+          console.log("BOM stripped");
+        }
+        
+        // Validate it's not empty or truncated
+        if (!text || text.trim().length === 0) {
+          throw new Error("File is empty or could not be read completely");
+        }
+        
+        // Check if text ends properly (should end with } or ] for JSON)
+        const trimmed = text.trim();
+        const lastChar = trimmed[trimmed.length - 1];
+        if (lastChar !== '}' && lastChar !== ']') {
+          console.warn("Warning: JSON doesn't end with } or ] - last char is:", lastChar);
+          throw new Error("File appears to be truncated (doesn't end with } or ])");
+        }
+        
+        console.log("Starting JSON parse...");
+        container.innerHTML = '<div style="text-align:center;padding:40px;font-size:18px;">Parsing JSON... (' + 
+          fileSizeMB + ' MB)</div>';
+        
+        // Use setTimeout again to allow UI update before parsing
+        setTimeout(() => {
+          try {
+            const data = JSON.parse(text);
+            console.log("JSON parsed successfully!");
+            
+            // Don't store huge JSON in textarea for very large files (>50MB)
+            if (file.size < 50 * 1024 * 1024) {
+              document.getElementById('jsonInput').value = text;
+            } else {
+              console.log("File too large to display in textarea");
+            }
+            
+            fileStatus.innerHTML = `<span class="status-badge">✔ ${file.name} (${fileSizeMB} MB)</span>`;
+            generateCharts(data, true);      // data = parsed JSON object
+          } catch (parseErr) {
+            throw parseErr;
+          }
+        }, 50);
+        
+      } catch (err) {
+        container.innerHTML = '';
+        errorDiv.textContent = "Error: " + err.message;
+        if (err.message.includes("Unexpected end")) {
+          errorDiv.textContent += "\n\nPossible causes:\n" +
+            "• File was truncated during reading\n" +
+            "• Browser memory limit exceeded\n" +
+            "• Try using a smaller file or different browser";
+        }
+        errorDiv.style.display = "block";
+        fileStatus.innerHTML = '<span class="status-badge error">⚠ ' + err.message + '</span>';
+        console.error("Full error:", err);
+        console.error("Error stack:", err.stack);
+      }
+    }, 50);
+  };
+  
+  reader.onerror = err => {
+    container.innerHTML = '';
+    errorDiv.textContent = "Error reading file: " + (err.message || "Unknown error");
+    errorDiv.style.display = "block";
+    fileStatus.innerHTML = '<span class="status-badge error">⚠ Read error</span>';
+    console.error("File read error:", err);
+  };
+  
+  reader.onprogress = (evt) => {
+    if (evt.lengthComputable) {
+      const percent = ((evt.loaded / evt.total) * 100).toFixed(0);
+      container.innerHTML = '<div style="text-align:center;padding:40px;font-size:18px;">Reading file... ' + 
+        percent + '%</div>';
+    }
+  };
+  
+  // Use readAsText with explicit UTF-8 encoding
+  console.log("Starting to read file:", file.name, "Size:", fileSizeMB, "MB");
+  reader.readAsText(file, 'utf-8');
+});
+
+document.getElementById("generateBtn").addEventListener("click", () => {
+  const text = document.getElementById("jsonInput").value;
+  try {
+    const parsed = JSON.parse(text);
+    generateCharts(parsed, false);
+  } catch (e) {
+    const errorDiv = document.getElementById("error");
+    errorDiv.textContent = "Error parsing JSON: " + e.message;
+    errorDiv.style.display = "block";
+  }
+});
+
+let chartInstances = [];
+
+function generateCharts(data, fromFile = false) {
+    // Hide textarea if data loaded from file
+    if (fromFile) {
+        document.getElementById('jsonInput').style.display = 'none';
+    }
+
+    const errorDiv = document.getElementById('error');
+    const container = document.getElementById('chartsContainer');
+    errorDiv.style.display = 'none';
+    container.innerHTML = '';
+
+    // Destroy old charts
+    chartInstances.forEach(c => c.destroy());
+    chartInstances = [];
+
+    try {
+        // data is already parsed JSON array/object
+        if (!data || (Array.isArray(data) && data.length === 0))
+            throw new Error("JSON data is empty or invalid");
+
+        // build charts directly
+        createSummaryTable(data);
+        createStackedOpsChart(data);
+        createSerializedMaxSizeChart(data);
+        createOperationCharts(data);
+        createSizeCharts(data);
+        createErrorChart(data);
+        createMemorySection(data);
+        createCardinalityCharts(data);
+        createTotalTimeRankingChart(data);
+    } catch (e) {
+        errorDiv.textContent = "Error creating charts: " + e.message;
+        errorDiv.style.display = "block";
+        console.error("Chart generation error:", e);
+    }
+}
+
+/* ───────────────────────────────────────────────
+   Operation charts (unchanged)
+─────────────────────────────────────────────── */
+function createOperationCharts(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = '<h2 style="text-align:center;">Operation Performance by Sketch Size</h2><div class="operation-charts" id="opCharts"></div>';
+    container.appendChild(wrapper);
+    const opChartsDiv = document.getElementById('opCharts');
+
+    const grouped = {};
+    data.forEach(d => (grouped[d.sketchType] ||= []).push(d));
+
+    const operations = [
+        { key:'updateResult', label:'Update' },
+        { key:'mergeResult', label:'Merge' },
+        { key:'serializeResult', label:'Serialize' },
+        { key:'deserializeResult', label:'Deserialize' }
+    ];
+
+    operations.forEach((op, idx) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${op.label}</h3><canvas class="normal-cavas" id="chart_${op.key}"></canvas>`;
+        opChartsDiv.appendChild(div);
+
+        // --- sorted data by size ---
+        const datasets = Object.keys(grouped).map((t, i) => {
+            const sorted = [...grouped[t]].sort((a,b)=>a.sketchSize-b.sketchSize);
+            return {
+                label: t,
+                data: sorted.map(r => ({ x: r.sketchSize, y: r[op.key].avgOpTimeNs })),
+                borderColor: color(i),
+                backgroundColor: color(i,0.2),
+                tension: 0.4
+            };
+        });
+
+        const ctx = document.getElementById(`chart_${op.key}`).getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                scales: {
+                    // use log2 scale
+                    x: {
+                        type: 'logarithmic',
+                        base: 2,
+                        title: { display: true, text: 'Sketch Size (log₂ scale)' },
+                        ticks: {
+                            callback: v => Math.log2(v) % 1 === 0 ? v : null
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Avg Time (ns)' }
+                    }
+                },
+                plugins:{ legend:{ position:'top' } }
+            }
+        });
+    });
+}
+
+/* ──────────────────────  Size charts ────────────────────── */
+function createSizeCharts(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = '<h2 style="text-align:center;">Size Metrics</h2><div class="operation-charts" id="sizeCharts"></div>';
+    container.appendChild(wrapper);
+    const sizeCharts = document.getElementById('sizeCharts');
+
+    // group and sort data
+    const grouped = {};
+    data.forEach(d => (grouped[d.sketchType] ||= []).push(d));
+
+    const metrics = [
+        { key: 'minSize', label: 'Min Size (bytes)' },
+        { key: 'maxSize', label: 'Max Size (bytes)' }
+    ];
+
+    metrics.forEach((metric, mIdx) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${metric.label}</h3><canvas class="normal-cavas" id="chart_${metric.key}"></canvas>`;
+        sizeCharts.appendChild(div);
+
+        const datasets = Object.keys(grouped).map((skType, i) => {
+            const sorted = [...grouped[skType]].sort((a, b) => a.sketchSize - b.sketchSize);
+            return {
+                label: skType,
+                data: sorted.map(r => ({ x: r.sketchSize, y: r.sizeResult[metric.key] })),
+                borderColor: color(i),
+                backgroundColor: color(i, 0.25),
+                tension: 0.4
+            };
+        });
+
+        const ctx = document.getElementById(`chart_${metric.key}`).getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                scales: {
+                    x: {
+                        type: 'logarithmic',
+                        base: 2,
+                        title: {
+                            display: true,
+                            text: 'Sketch Size (log₂ scale)'
+                        },
+                        ticks: {
+                            callback: v => (Math.log2(v) % 1 === 0 ? v : null)
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: metric.label
+                        }
+                    }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    });
+}
+
+/* ──────────────────────  Error chart ────────────────────── */
+function createErrorChart(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0 auto;">Error Rate by Sketch Size</h2>
+        <button id="errToggle" style="margin:4px 10px;padding:4px 10px;">Show All X Labels</button>
+      </div>
+      <canvas class="normal-cavas" id="errChart"></canvas>`;
+    container.appendChild(wrapper);
+
+    // group + sort
+    const grouped = {};
+    data.forEach(d => (grouped[d.sketchType] ||= []).push(d));
+    const datasets = Object.keys(grouped).map((t, i) => {
+        const sorted = [...grouped[t]].sort((a,b)=>a.sketchSize-b.sketchSize);
+        return {
+            label: t,
+            data: sorted.map(r=>({x:r.sketchSize,y:r.cardinalityResult.errorPercentage})),
+            borderColor: color(i),
+            backgroundColor: color(i,0.25),
+            tension: 0.4
+        };
+    });
+
+    const ctx = document.getElementById('errChart').getContext('2d');
+
+    // helper for tick callback: switch behavior using flag
+    let showAll = false;
+    function tickCallback(v) {
+        if (showAll) {
+            // only show integer-ish powers of 2 values for readability
+            return Math.log2(v) % 1 === 0 ? v : v;
+        }
+        // default: only powers of 2 greater than 10
+        if (v > 10 && Math.log2(v) % 1 === 0) return v;
+        return null;
+    }
+
+    // Create chart with log2 scale, default min >10
+    const errChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            scales: {
+                x: {
+                    type: 'logarithmic',
+                    base: 2,
+                    min: 16,
+                    title: { display: true, text: 'Sketch Size (log₂ scale)' },
+                    ticks: {
+                        callback: tickCallback,
+                        color: document.body.classList.contains('dark')?'#eaeaea':'#222'
+                    },
+                    grid: {
+                        color: document.body.classList.contains('dark')?'#444':'#ccc'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Error (%)' },
+                    ticks: { color: document.body.classList.contains('dark')?'#eaeaea':'#222' },
+                    grid: { color: document.body.classList.contains('dark')?'#444':'#ccc' }
+                }
+            },
+            plugins: {
+                legend: { display: true, position: 'top', labels: { color: document.body.classList.contains('dark')?'#eaeaea':'#222' } }
+            }
+        }
+    });
+    chartInstances.push(errChart);
+
+    // Button toggle handler
+    const btn = document.getElementById('errToggle');
+    btn.addEventListener('click', () => {
+        showAll = !showAll;
+        btn.textContent = showAll ? 'Show > 10 Labels' : 'Show All X Labels';
+        // update tick callback and min
+        errChart.options.scales.x.min = showAll ? undefined : 16;
+        errChart.options.scales.x.ticks.callback = tickCallback;
+        errChart.update();
+    });
+}
+
+/* ─────────────────  Memory chart section with dropdown ───────────────── */
+function createMemorySection(data){
+    const container=document.getElementById('chartsContainer');
+    const wrapper=document.createElement('div');
+    wrapper.className='chart-wrapper';
+    wrapper.innerHTML=`
+        <h2 style="text-align:center;">Memory Usage (Annotated)</h2>
+        <label>Select Sketch Size: </label>
+        <select id="memDropdown" style="padding:5px;margin-bottom:10px;"></select>
+        <div id="memoryGroup"></div>`;
+    container.appendChild(wrapper);
+
+    const memDropdown=document.getElementById('memDropdown');
+    const uniqueSizes=[...new Set(data.map(d=>d.sketchSize))].sort((a,b)=>a-b);
+    uniqueSizes.forEach(size=>{
+        const opt=document.createElement('option');
+        opt.value=size;
+        opt.textContent='Size '+size;
+        memDropdown.appendChild(opt);
+    });
+
+    memDropdown.addEventListener('change',()=>renderMemoryCharts(parseInt(memDropdown.value),data));
+    renderMemoryCharts(uniqueSizes[0],data);
+}
+
+function renderMemoryCharts(size,data){
+    const memContainer=document.getElementById('memoryGroup');
+    memContainer.innerHTML='';
+    chartInstances
+        .filter(c=>c.config.options && c.config.options._isMemory)
+        .forEach(c=>c.destroy());
+    const subset=data.filter(d=>d.sketchSize===size);
+    subset.forEach((d,idx)=>createAnnotatedMemoryChart(d,memContainer,idx));
+}
+
+function createAnnotatedMemoryChart(d, container, idx) {
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>${d.sketchType} - Size ${d.sketchSize}</h3>
+                     <canvas class="normal-cavas" id="memChart_${idx}"></canvas>
+                     <div class="mem-tooltip" style="position:absolute;
+                            background:#333;color:#fff;padding:6px 10px;
+                            border-radius:4px;font-size:12px;display:none;
+                            pointer-events:none;z-index:10;"></div>`;
+    container.appendChild(div);
+    const ctx = div.querySelector('canvas').getContext('2d');
+    const tooltipDiv = div.querySelector('.mem-tooltip');
+    const snaps = d.memorySnapshots;
+    if (!snaps || !snaps.length) return;
+    const base = snaps[0].timestamp;
+    const t = ts => ts - base;
+    const timestamps = snaps.map(s => t(s.timestamp));
+    const used = snaps.map(s => s.usedHeap / (1024 * 1024));
+    const committed = snaps.map(s => s.committedHeap / (1024 * 1024));
+    const max = snaps.map(s => s.maxHeap / (1024 * 1024));
+    const annotations = {};
+    // helper: ms/µs/s formatting
+    function formatNs(ns) {
+        if (ns < 1e3) return ns.toFixed(0) + " ns";
+        if (ns < 1e6) return (ns / 1e3).toFixed(2) + " µs";
+        if (ns < 1e9) return (ns / 1e6).toFixed(2) + " ms";
+        const sec = ns / 1e9;
+        if (sec < 60) return sec.toFixed(2) + " s";
+        if (sec < 3600) {
+            const min = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${min} min ${s.toFixed(1)} s`;
+        }
+        const hours = Math.floor(sec / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        return `${hours} h ${mins} min`;
+    }
+
+    // 1️⃣ operations
+    const ops = [
+        { key: "updateResult", label: "Update", color: "rgba(54,162,235,0.25)" },
+        { key: "mergeResult", label: "Merge", color: "rgba(255,99,132,0.25)" },
+        { key: "serializeResult", label: "Serialize", color: "rgba(75,192,192,0.25)" },
+        { key: "deserializeResult", label: "Deserialize", color: "rgba(153,102,255,0.25)" }
+    ];
+    ops.forEach(op => {
+        if (d[op.key]) {
+            const s = t(d[op.key].startTimeNs);
+            const e = t(d[op.key].endTimeNs);
+            annotations[op.key] = {
+                type: "box",
+                xMin: s,
+                xMax: e,
+                backgroundColor: op.color,
+                borderWidth: 0,
+                label: { display: true, content: op.label, position: "start" },
+                _meta: { name: op.label, s, e }
+            };
+        }
+    });
+
+    // 2️⃣  SizeResult region (new)
+    if (d.sizeResult) {
+        const s = t(d.sizeResult.startTimeNs);
+        const e = t(d.sizeResult.endTimeNs);
+        annotations["sizeResult"] = {
+            type: "box",
+            xMin: s,
+            xMax: e,
+            backgroundColor: "rgba(128,128,128,0.2)",
+            borderColor: "#888",
+            borderWidth: 1,
+            borderDash: [4, 2],
+            label: { display: true, content: "Size Result", position: "center" },
+            _meta: { name: "Size Result", s, e }
+        };
+    }
+
+    // 3️⃣  Event tags
+    if (d.eventTags) {
+        d.eventTags.forEach((tag, i) => {
+            if (tag.isRegion) {
+                const s = t(tag.startTimeNs);
+                const e = t(tag.endTimeNs);
+                annotations[`tag_${i}`] = {
+                    type: "box",
+                    xMin: s,
+                    xMax: e,
+                    backgroundColor: "rgba(255,159,64,0.15)",
+                    borderColor: "rgba(255,159,64,0.8)",
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    label: { display: true, content: tag.markTag, position: "center" },
+                    _meta: { name: tag.markTag, s, e }
+                };
+            } else {
+                const s = t(tag.startTimeNs);
+                annotations[`tag_${i}`] = {
+                    type: "line",
+                    xMin: s,
+                    xMax: s,
+                    borderColor: "rgba(255,159,64,0.8)",
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    label: { display: true, content: tag.markTag, position: "start" },
+                    _meta: { name: tag.markTag, s, e: s }
+                };
+            }
+        });
+    }
+
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            datasets: [
+                {
+                    label: "Used Heap (MB)",
+                    data: timestamps.map((tt, i) => ({ x: tt, y: used[i] })),
+                    borderColor: "rgba(255,99,132,1)",
+                    tension: 0.4
+                },
+                {
+                    label: "Committed Heap (MB)",
+                    data: timestamps.map((tt, i) => ({ x: tt, y: committed[i] })),
+                    borderColor: "rgba(54,162,235,1)",
+                    tension: 0.4,
+                    borderDash: [5, 5]
+                },
+                {
+                    label: "Max Heap (MB)",
+                    data: timestamps.map((tt, i) => ({ x: tt, y: max[i] })),
+                    borderColor: "rgba(75,192,192,1)",
+                    tension: 0.4,
+                    borderDash: [10, 5]
+                }
+            ]
+        },
+        options: {
+            _isMemory: true,
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: { type: "linear", title: { display: true, text: "Time (ns offset)" } },
+                y: { beginAtZero: true, title: { display: true, text: "Memory (MB)" } }
+            },
+            plugins: {
+                annotation: { annotations },
+                legend: { display: true, position: "top" }
+            },
+            interaction: { mode: "nearest", intersect: false }
+        }
+    });
+    chartInstances.push(chart);
+
+    /* ──────────────────────────────────────────────
+       Hover tooltip for region names & durations
+    ────────────────────────────────────────────── */
+    const canvas = ctx.canvas;
+    const wrapper = div; // our chart wrapper
+    wrapper.style.position = "relative"; // anchor tooltip
+    tooltipDiv.style.position = "absolute";
+    tooltipDiv.style.zIndex = "100";
+    tooltipDiv.style.pointerEvents = "none";
+
+    canvas.addEventListener("mousemove", e => {
+        const rect = wrapper.getBoundingClientRect();
+        const xPixel = e.clientX - rect.left;
+        const yPixel = e.clientY - rect.top;
+        const xVal = chart.scales.x.getValueForPixel(xPixel);
+        let hovered = null;
+        let activeKey = null;
+        for (const [key, ann] of Object.entries(annotations)) {
+            const meta = ann._meta;
+            if (!meta) continue;
+            if (xVal >= meta.s && xVal <= meta.e) {
+                hovered = meta;
+                activeKey = key;
+                break;
+            }
+        }
+
+        if (hovered) {
+            // compute duration text
+            const dur = hovered.e - hovered.s;
+            tooltipDiv.textContent = `${hovered.name} • ${formatNs(dur)}`;
+            tooltipDiv.style.display = "block";
+            tooltipDiv.style.left = `${xPixel + 12}px`;
+            tooltipDiv.style.top = `${yPixel + 12}px`;
+
+            // highlight region
+            for (const [key, ann] of Object.entries(annotations)) {
+                if (typeof ann.backgroundColor === "string") {
+                    ann.backgroundColor = key === activeKey
+                        ? ann.backgroundColor.replace(/0\.\d+/, "0.55")
+                        : ann.backgroundColor.replace(/0\.\d+/, "0.25");
+                }
+            }
+            chart.update("none");
+        } else {
+            tooltipDiv.style.display = "none";
+            // reset all opacities
+            for (const ann of Object.values(annotations)) {
+                if (typeof ann.backgroundColor === "string") {
+                    ann.backgroundColor = ann.backgroundColor.replace(/0\.\d+/, "0.25");
+                }
+            }
+            chart.update("none");
+        }
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+        tooltipDiv.style.display = "none";
+        for (const ann of Object.values(annotations)) {
+            if (typeof ann.backgroundColor === "string") {
+                ann.backgroundColor = ann.backgroundColor.replace(/0\.\d+/, "0.25");
+            }
+        }
+        chart.update("none");
+    });
+}
+
+function humanTime(ns) {
+    if (ns < 1e3) return ns.toFixed(0) + " ns";
+    if (ns < 1e6) return (ns / 1e3).toFixed(2) + " µs";
+    if (ns < 1e9) return (ns / 1e6).toFixed(2) + " ms";
+    const sec = ns / 1e9;
+    if (sec < 60) return sec.toFixed(2) + " s";
+    if (sec < 3600) {
+        const min = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${min} min ${s.toFixed(1)} s`;
+    }
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${h} h ${m} min`;
+}
+
+function createSummaryTable(data) {
+    const container = document.getElementById("chartsContainer");
+    const wrapper = document.createElement("div");
+    wrapper.className = "chart-wrapper";
+    wrapper.innerHTML = `<h2 style="text-align:center;">Benchmark Summary</h2>
+        <table style="width:60%;margin:auto;border-collapse:collapse;text-align:center;">
+          <tbody id="summaryBody"></tbody>
+        </table>`;
+    container.appendChild(wrapper);
+    const body = wrapper.querySelector("#summaryBody");
+
+    // representative values
+    const numSketches = data.length ? data[0].numSketches : 0;
+    const lgK = data.length ? (data[0].lgK ?? "–") : "–";
+    const totalNs = data.reduce((s, d) => s + (d.timeTakenNs || 0), 0);
+
+    // NEW: collect all sketch sizes
+    const sizes = [...new Set(data.map(d => d.sketchSize))].sort((a, b) => a - b);
+    const sizeList = sizes.join(", ");
+    const rows = [
+        ["Number of Sketches", numSketches.toLocaleString()],
+        ["lgK", lgK],
+        ["Sketch Sizes", sizeList],
+        ["Total Time Taken", humanTime(totalNs)]
+    ];
+
+    rows.forEach(([label, value]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="border:1px solid #ccc;padding:6px;font-weight:600;">${label}</td>
+          <td style="border:1px solid #ccc;padding:6px;">${value}</td>`;
+        body.appendChild(tr);
+    });
+}
+
+function createStackedOpsChart(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    // wrapper.innerHTML = '<h2 style="text-align:center;">Operation Time Comparison (Stacked)</h2><canvas id="stackedOps"></canvas>';
+    // wrapper.innerHTML = '<h2 style="text-align:center;">Operation Time Comparison (Stacked)</h2><div style="overflow-y:auto;"><canvas id="stackedOps"></canvas></div>';
+    wrapper.innerHTML = '<h2 style="text-align:center;">Operation Time Comparison (Stacked)</h2><div id="stackedOpsContainer"><canvas id="stackedOps" style="max-height:auto"></canvas></div>';
+
+    container.appendChild(wrapper);
+
+    // Build a simple array
+    const grouped = data.map(d => ({
+        sketchType: d.sketchType,
+        sketchSize: d.sketchSize,
+        update: d.updateResult?.avgOpTimeNs || 0,
+        merge: d.mergeResult?.avgOpTimeNs || 0,
+        serialize: d.serializeResult?.avgOpTimeNs || 0,
+        deserialize: d.deserializeResult?.avgOpTimeNs || 0,
+        cardinality: d.cardinalityResult?.time || 0
+    }));
+
+    // Sort: sketchType alphabetically then numeric size order
+    grouped.sort((a, b) => {
+        if (a.sketchType === b.sketchType) return a.sketchSize - b.sketchSize;
+        return a.sketchType.localeCompare(b.sketchType);
+    });
+
+    const labels = grouped.map(g => `${g.sketchType}_size${g.sketchSize}`);
+
+    // Colors per operation
+    const colors = {
+        update: 'rgba(54,162,235,0.8)',
+        merge: 'rgba(255,99,132,0.8)',
+        serialize: 'rgba(255,206,86,0.8)',
+        deserialize: 'rgba(75,192,192,0.8)',
+        cardinality: 'rgba(153,102,255,0.8)'
+    };
+
+    const datasets = [
+        { key: 'update', label: 'Update', color: colors.update },
+        { key: 'merge', label: 'Merge', color: colors.merge },
+        { key: 'serialize', label: 'Serialize', color: colors.serialize },
+        { key: 'deserialize', label: 'Deserialize', color: colors.deserialize },
+        { key: 'cardinality', label: 'Cardinality Estimation', color: colors.cardinality }
+    ].map(ds => ({
+        label: ds.label,
+        data: grouped.map(g => g[ds.key]),
+        backgroundColor: ds.color,
+        borderWidth: 1
+    }));
+
+    if (window.stackOpsChart) window.stackOpsChart.destroy();
+
+    const barHeight = 10;
+    const chartHeight = labels.length * barHeight + 80;
+    const containerEl = document.getElementById('stackedOpsContainer');
+    containerEl.style.height = chartHeight + 'px';
+    containerEl.style.position = 'relative';
+    containerEl.style.width = '100%';
+
+    window.stackOpsChart = new Chart(document.getElementById('stackedOps'), {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'nearest', intersect: true },
+            scales: {
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Average Operation Time (ns)' },
+                    ticks: { callback: v => humanTime(v) }
+                },
+                y: {
+                    stacked: true,
+                    title: { display: true, text: 'Sketch (Type_Size)' },
+                    ticks: { autoSkip: false }
+                }
+            },
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    mode: 'nearest',
+                    intersect: true,
+                    callbacks: {
+                        title: c => c[0]?.chart.data.labels[c[0].dataIndex] || '',
+                        label: ctx => {
+                            // total for the current sketch (sum of all datasets at same index)
+                            const chart = ctx.chart;
+                            const idx = ctx.dataIndex;
+                            const total = chart.data.datasets
+                                .reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
+                            const part = ctx.raw;
+                            return [
+                                `${ctx.dataset.label}: ${humanTime(part)}`,
+                                `Total: ${humanTime(total)}`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCardinalityCharts(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = `
+      <h2 style="text-align:center;">Estimated vs Actual Cardinality</h2>
+      <div id="cardCharts"></div>`;
+    container.appendChild(wrapper);
+    const cardDiv = wrapper.querySelector('#cardCharts');
+    const sizes = [...new Set(data.map(d => d.sketchSize))].sort((a,b)=>a-b);
+
+    sizes.forEach(size => {
+        const sub = document.createElement('div');
+        sub.id = `cardSub_${size}`;
+        sub.style.display = 'none';
+        sub.innerHTML = `<h3>Size ${size}</h3><canvas class="normal-cavas" id="cardChart_${size}"></canvas>`;
+        cardDiv.appendChild(sub);
+    });
+
+    sizes.forEach(size => {
+        const subset = data.filter(d => d.sketchSize === size);
+        const labels = subset.map(d => `${d.sketchType}`);
+        const estimated = subset.map(d => d.cardinalityResult.estimatedCardinality);
+        const actual = subset.map(d => d.cardinalityResult.actualCardinality);
+        const ctx = document.getElementById(`cardChart_${size}`).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Estimated',
+                        data: estimated,
+                        backgroundColor: 'rgba(75,192,192,0.7)'
+                    },
+                    {
+                        label: 'Actual',
+                        data: actual,
+                        backgroundColor: 'rgba(255,206,86,0.7)'
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Cardinality' }
+                    }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    });
+
+    // tie visibility to memory dropdown
+    const memDropdown = document.getElementById('memDropdown');
+    if (memDropdown) {
+        const updateVisibility = () => {
+            const val = parseInt(memDropdown.value);
+            sizes.forEach(size => {
+                document.getElementById(`cardSub_${size}`).style.display =
+                    size === val ? 'block' : 'none';
+            });
+        };
+        memDropdown.addEventListener('change', updateVisibility);
+        updateVisibility();
+    }
+}
+
+function createSerializedMaxSizeChart(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = `
+        <h2 style="text-align:center;">Max Serialized Sketch Size</h2>
+        <div id="serializedMaxContainer"><canvas id="serializedMaxChart"></canvas></div>`;
+    container.appendChild(wrapper);
+
+    // --- sort by sketchType then numeric sketchSize ---
+    const sorted = [...data].sort((a, b) => {
+        if (a.sketchType === b.sketchType) return a.sketchSize - b.sketchSize;
+        return a.sketchType.localeCompare(b.sketchType);
+    });
+
+    const labels = sorted.map(d => `${d.sketchType}_size${d.sketchSize}`);
+    const values = sorted.map(d => d.sizeResult.maxSize);
+
+    const barHeight = 10;
+    const chartHeight = labels.length * barHeight + 80;
+    const containerEl = document.getElementById('serializedMaxContainer');
+    containerEl.style.height = chartHeight + 'px';
+    containerEl.style.position = 'relative';
+    containerEl.style.width = '100%';
+
+    const ctx = document.getElementById('serializedMaxChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Max Size (bytes)',
+                data: values,
+                backgroundColor: 'rgba(153,102,255,0.7)'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Bytes' }
+                },
+                y: {
+                    title: { display: true, text: 'Sketch (Type_Size)' },
+                    ticks: { autoSkip: false }
+                }
+            },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+}
+
+function createTotalTimeRankingChart(data) {
+    const container = document.getElementById('chartsContainer');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-wrapper';
+    wrapper.innerHTML = `
+      <h2 style="text-align:center;">Total Processing Time (Formula Components)</h2>
+      <p style="text-align:center;font-size:12px;margin-top:-5px;">
+        Rxavg(u) + Kx(R/numTasks)xavg(m) + SWxavg(s) + SWxavg(d) + SWxavg(m) + Wxavg(c)
+      </p>
+      <div style="text-align:center;margin-bottom:12px;">
+        <label>R:<input type="number" id="inputR" style="width:90px;margin-right:8px;"></label>
+        <label>W:<input type="number" id="inputW" style="width:90px;margin-right:8px;"></label>
+        <label>SW:<input type="number" id="inputSW" style="width:90px;margin-right:8px;"></label>
+        <label>numTasks:<input type="number" id="inputTasks" style="width:90px;margin-right:8px;"></label>
+        <label>K:<input type="number" step="0.0001" id="inputK" style="width:90px;"></label>
+        <button id="recalcBtn" style="margin-left:10px;padding:4px 12px;">Recalculate</button>
+      </div>
+      <canvas class="medium-canvas" id="totalTimeChart"></canvas>`;
+    container.appendChild(wrapper);
+
+    const ctx = document.getElementById('totalTimeChart').getContext('2d');
+    const grouped = {};
+    data.forEach(d => (grouped[d.sketchType] ||= []).push(d));
+
+    function computeValues(R, W, SW, numTasks, K) {
+        const results = [];
+        Object.keys(grouped).forEach(skType => {
+            const arr = grouped[skType];
+            const n = arr.length;
+            const avg = key =>
+                arr.reduce((s, d) => s + (d[key]?.avgOpTimeNs || 0), 0) / n;
+            const avgU = avg("updateResult");
+            const avgS = avg("serializeResult");
+            const avgD = avg("deserializeResult");
+            const avgM = avg("mergeResult");
+            const avgC = arr.reduce((s, d) => s + (d.cardinalityResult?.time || 0), 0) / n;
+
+            const updateVal = R * avgU;
+            const mapMergeVal = K * (R / numTasks) * avgM;
+            const serializeVal = SW * avgS;
+            const deserializeVal = SW * avgD;
+            const reduceMergeVal = SW * avgM;
+            const cardinalityVal = W * avgC;
+            const total = updateVal + mapMergeVal + serializeVal + deserializeVal + reduceMergeVal + cardinalityVal;
+
+            results.push({
+                sketchType: skType,
+                total,
+                values: { updateVal, mapMergeVal, serializeVal, deserializeVal, reduceMergeVal, cardinalityVal }
+            });
+        });
+        results.sort((a, b) => b.total - a.total);
+        return results;
+    }
+
+    const defaults = { R: data[0]?.numSketches || 1000, W: 1, SW: 1, numTasks: 1, K: 3.0197 };
+    for (const [k, v] of Object.entries(defaults))
+        document.getElementById('input' + (k === 'numTasks' ? 'Tasks' : k.toUpperCase())).value = v;
+
+    function makeChart(R, W, SW, numTasks, K) {
+        const computed = computeValues(R, W, SW, numTasks, K);
+        const labels = computed.map(x => x.sketchType);
+
+        const datasets = [
+            { key: 'updateVal', label: 'Update (R x avgU)', color: 'rgba(54,162,235,0.8)' },
+            { key: 'mapMergeVal', label: 'Map Merge (K x (R/numTasks) x avgM)', color: 'rgba(255,159,64,0.8)' },
+            { key: 'serializeVal', label: 'Serialize (SW x avgS)', color: 'rgba(255,99,132,0.8)' },
+            { key: 'deserializeVal', label: 'Deserialize (SW x avgD)', color: 'rgba(75,192,192,0.8)' },
+            { key: 'reduceMergeVal', label: 'Reduce Merge (SW x avgM)', color: 'rgba(153,102,255,0.8)' },
+            { key: 'cardinalityVal', label: 'Cardinality (W x avgC)', color: 'rgba(255,206,86,0.8)' }
+        ].map(ds => ({
+            label: ds.label,
+            data: computed.map(x => x.values[ds.key]),
+            backgroundColor: ds.color
+        }));
+
+        if (window.totalChart) window.totalChart.destroy();
+
+        window.totalChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                interaction: { mode: 'nearest', intersect: true },
+                scales: {
+                    x: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Total Processing Time (ns → human)' },
+                        ticks: { callback: v => humanTime(v) }
+                    },
+                    y: { stacked: true }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        mode: 'nearest',
+                        intersect: true,
+                        filter: item => item.parsed.x > 0,
+                        callbacks: {
+                            title: c => c[0]?.chart.data.labels[c[0].dataIndex] || '',
+                            label: ctx => {
+                                // find total for this sketch
+                                const idx = ctx.dataIndex;
+                                const total = computed[idx].total;
+                                const part = ctx.raw;
+                                return [
+                                    `${ctx.dataset.label}: ${humanTime(part)}`,
+                                    `Total: ${humanTime(total)}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    makeChart(defaults.R, defaults.W, defaults.SW, defaults.numTasks, defaults.K);
+
+    document.getElementById('recalcBtn').addEventListener('click', () => {
+        const R = parseFloat(document.getElementById('inputR').value) || defaults.R;
+        const W = parseFloat(document.getElementById('inputW').value) || defaults.W;
+        const SW = parseFloat(document.getElementById('inputSW').value) || defaults.SW;
+        const numTasks = parseFloat(document.getElementById('inputTasks').value) || defaults.numTasks;
+        const K = parseFloat(document.getElementById('inputK').value) || defaults.K;
+        makeChart(R, W, SW, numTasks, K);
+    });
+}
+
+/* simple color helper */
+function color(i,a=1){
+    const arr=[
+        'rgba(255,99,132,ALPHA)',
+        'rgba(54,162,235,ALPHA)',
+        'rgba(255,206,86,ALPHA)',
+        'rgba(75,192,192,ALPHA)',
+        'rgba(153,102,255,ALPHA)',
+        'rgba(255,159,64,ALPHA)'
+    ];
+    return arr[i%arr.length].replace('ALPHA',a);
+}
+
+// Toggle dark / light mode
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const body = document.body;
+  body.classList.toggle('dark');
+  const dark = body.classList.contains('dark');
+  const btn = document.getElementById('themeToggle');
+  btn.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
+  // update all existing charts dynamically
+  chartInstances.forEach(chart => {
+    chart.options.scales.x.grid.color = dark ? '#444' : '#ccc';
+    chart.options.scales.y.grid.color = dark ? '#444' : '#ccc';
+    chart.options.scales.x.ticks.color = chart.options.scales.y.ticks.color =
+      dark ? '#eaeaea' : '#222';
+    if (chart.options.plugins.legend) 
+      chart.options.plugins.legend.labels.color = dark ? '#eaeaea' : '#222';
+    chart.update('none');
+  });
+});
+
+    </script>
+</body>
+</html>
