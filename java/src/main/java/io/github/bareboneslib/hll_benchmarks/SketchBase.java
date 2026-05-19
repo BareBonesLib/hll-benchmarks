@@ -29,34 +29,35 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 enum SketchType {
-//    THETA("theta", ThetaSketch.class),
-//    CPC("cpc", CPCSketch.class),
-//    D_HLL_4("datasketches-hll-4", DataSketchHLL4.class),
-//    D_HLL_6("datasketches-hll-6", DataSketchHLL6.class),
-//    D_HLL_8("datasketches-hll-8", DataSketchHLL8.class),
-//    AGKN_4("agkn-4", AGKNSketch4.class),
-//    AGKN_6("agkn-6", AGKNSketch6.class),
-//    AGKN_8("agkn-8", AGKNSketch8.class),
-//    STRMLIB("strmlib-hll", StreamLibSketchesHLL.class),
-//    STRMLIB_SP12("strmlib-hll_sp12", StreamLibSketchesHLLPlus12.class),
-//    STRMLIB_SP14("strmlib-hll_sp14", StreamLibSketchesHLLPlus14.class),
-//    STRMLIB_SP16("strmlib-hll_sp16", StreamLibSketchesHLLPlus16.class),
-//    STRMLIB_SP18("strmlib-hll_sp18", StreamLibSketchesHLLPlus18.class),
-//    STRMLIB_SP20("strmlib-hll_sp20", StreamLibSketchesHLLPlus20.class),
-//    STRMLIB_SP22("strmlib-hll_sp22", StreamLibSketchesHLLPlus22.class),
-//    STRMLIB_SP24("strmlib-hll_sp24", StreamLibSketchesHLLPlus24.class),
+    THETA("theta", ThetaSketch.class),
+    CPC("cpc", CPCSketch.class),
+    D_HLL_4("datasketches-hll-4", DataSketchHLL4.class),
+    D_HLL_6("datasketches-hll-6", DataSketchHLL6.class),
+    D_HLL_8("datasketches-hll-8", DataSketchHLL8.class),
+    AGKN_4("agkn-4", AGKNSketch4.class),
+    AGKN_6("agkn-6", AGKNSketch6.class),
+    AGKN_8("agkn-8", AGKNSketch8.class),
+    STRMLIB("strmlib-hll", StreamLibSketchesHLL.class),
+    STRMLIB_SP12("strmlib-hll_sp12", StreamLibSketchesHLLPlus12.class),
+    STRMLIB_SP14("strmlib-hll_sp14", StreamLibSketchesHLLPlus14.class),
+    STRMLIB_SP16("strmlib-hll_sp16", StreamLibSketchesHLLPlus16.class),
+    STRMLIB_SP18("strmlib-hll_sp18", StreamLibSketchesHLLPlus18.class),
+    STRMLIB_SP20("strmlib-hll_sp20", StreamLibSketchesHLLPlus20.class),
+    STRMLIB_SP22("strmlib-hll_sp22", StreamLibSketchesHLLPlus22.class),
+    STRMLIB_SP24("strmlib-hll_sp24", StreamLibSketchesHLLPlus24.class),
 //    HASH4J_ULL("hash4j-ull", Hash4jUltraLogLog.class),
 //    HASH4J_HLL("hash4j-hll", Hash4jHyperLogLog.class),
-//    LIVERAMP_HMH_4("liveramp-hmh-4", LiveRampHyperMinHash4.class),
-//    LIVERAMP_HMH_6("liveramp-hmh-6", LiveRampHyperMinHash6.class),
-//    LIVERAMP_HMH_8("liveramp-hmh-8", LiveRampHyperMinHash8.class),
-//    LIVERAMP_BMH("liveramp-bmh", LiveRampBetaMinHash.class),
-//    BAREBONES_HLL_4("barebones-hll-4", BareBonesHLL4.class),
-//    BAREBONES_HLL_5("barebones-hll-5", BareBonesHLL5.class),
-//    BAREBONES_HLL_6("barebones-hll-6", BareBonesHLL6.class),
+    LIVERAMP_HMH_4("liveramp-hmh-4", LiveRampHyperMinHash4.class),
+    LIVERAMP_HMH_6("liveramp-hmh-6", LiveRampHyperMinHash6.class),
+    LIVERAMP_HMH_8("liveramp-hmh-8", LiveRampHyperMinHash8.class),
+    LIVERAMP_BMH("liveramp-bmh", LiveRampBetaMinHash.class),
+    BAREBONES_HLL_4("barebones-hll-4", BareBonesHLL4.class),
+    BAREBONES_HLL_5("barebones-hll-5", BareBonesHLL5.class),
+    BAREBONES_HLL_6("barebones-hll-6", BareBonesHLL6.class),
     BAREBONES_HLLPP_4("barebones-hllpp-4", BareBonesHLLPlusPlus4.class),
     BAREBONES_HLLPP_5("barebones-hllpp-5", BareBonesHLLPlusPlus5.class),
-    BAREBONES_HLLPP_6("barebones-hllpp-6", BareBonesHLLPlusPlus6.class);
+    BAREBONES_HLLPP_6("barebones-hllpp-6", BareBonesHLLPlusPlus6.class),
+    GOOGLE_ZETASKETCH("google-zetasketch", ZetaSketch.class);
 
     private final String name;
     private final Class<? extends SketchBase> sketchClass;
@@ -690,7 +691,6 @@ class BareBonesHLL6 extends BareBonesHLLBase {
 }
 
 
-
 class BareBonesHLLPlusPlusBase extends SketchBase {
     HLLPlusPlus sketch = null;
     static net.openhft.hashing.LongHashFunction hash = LongHashFunction.xx();
@@ -740,5 +740,38 @@ class BareBonesHLLPlusPlus5 extends BareBonesHLLPlusPlusBase {
 class BareBonesHLLPlusPlus6 extends BareBonesHLLPlusPlusBase {
     BareBonesHLLPlusPlus6(int p) {
         init(p, 6);
+    }
+}
+
+class ZetaSketch extends SketchBase {
+    com.google.zetasketch.HyperLogLogPlusPlus<String> sketch = null;
+
+    ZetaSketch(int lgK) {
+        this.sketch = new com.google.zetasketch.HyperLogLogPlusPlus.Builder().normalPrecision(lgK).sparsePrecision(lgK + 4).buildForStrings();
+    }
+
+    @Override
+    void update(String val) {
+        sketch.add(val);
+    }
+
+    @Override
+    void merge(SketchBase sketch) {
+        this.sketch.merge(((ZetaSketch) sketch).sketch);
+    }
+
+    @Override
+    byte[] serialize() {
+        return this.sketch.serializeToByteArray();
+    }
+
+    @Override
+    void deserialize(byte[] bytes) {
+        this.sketch = (com.google.zetasketch.HyperLogLogPlusPlus<String>) com.google.zetasketch.HyperLogLogPlusPlus.forProto(bytes);
+    }
+
+    @Override
+    long cardinality() {
+        return sketch.result();
     }
 }

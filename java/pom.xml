@@ -6,7 +6,7 @@
 
     <groupId>io.github.bareboneslib</groupId>
     <artifactId>hll_benchmarks</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>Performance Test of Different Sketch Implementations</name>
     <description>Performance Test of Different Sketch Implementations</description>
 
@@ -21,8 +21,16 @@
         <!-- BareBoneHLL -->
         <dependency>
             <groupId>io.github.bareboneslib</groupId>
-            <artifactId>bareboneshll</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>barebones-hll</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.google.zetasketch/zetasketch -->
+        <dependency>
+            <groupId>com.google.zetasketch</groupId>
+            <artifactId>zetasketch</artifactId>
+            <version>0.2.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Apache DataSketches -->
