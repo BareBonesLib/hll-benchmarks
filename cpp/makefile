@@ -2,7 +2,7 @@
 # Compiler & flags
 # =====================
 CXX := g++
-CXXFLAGS := -std=c++17 -O3 -Wall -Wextra
+CXXFLAGS := -std=c++17 -O3 -Wall -Wextra -march=native
 CXXFLAGS += -Isrc -Isrc/implementations
 CXXFLAGS += -I/opt/homebrew/include -I/usr/local/include
 LDFLAGS  := -L/opt/homebrew/lib -L/usr/local/lib
