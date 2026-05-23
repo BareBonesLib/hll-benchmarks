@@ -20,13 +20,12 @@ Run under Java 1.8 (HotSpot 64-bit Server VM).
 
 | Library | Sketch | Version | Variant |
 |---|---|---|---|
-| [BareBonesHLL](https://github.com/BareBonesLib/barebones-hll) | HyperLogLog++ | `0.5.0` | precision 4, 5, 6 |
-| [BareBonesHLL](https://github.com/BareBonesLib/barebones-hll) | HyperLogLog (classic) | `0.5.0` | precision 4, 5, 6 |
+| [BareBones-HLL](https://github.com/BareBonesLib/barebones-hll) | HyperLogLog++ | `0.5.0` | precision 4, 5, 6 |
+| [BareBones-HLL](https://github.com/BareBonesLib/barebones-hll) | HyperLogLog (classic) | `0.5.0` | precision 4, 5, 6 |
 | [Apache DataSketches](https://datasketches.apache.org/) | HyperLogLog | `5.0.0` | lgK 4, 6, 8 |
 | [Apache DataSketches](https://datasketches.apache.org/) | CPC Sketch | `5.0.0` | — |
 | [Apache DataSketches](https://datasketches.apache.org/) | Theta Sketch | `5.0.0` | — |
 | [AGKN (net.agkn)](https://github.com/aggregateknowledge/java-hll) | HyperLogLog | `1.6.0` | register width 4, 6, 8 |
-| [stream-lib (clearspring)](https://github.com/addthis/stream-lib) | HyperLogLog | `2.9.8` | — |
 | [stream-lib (clearspring)](https://github.com/addthis/stream-lib) | HyperLogLog++ | `2.9.8` | sparse precision 12, 14, 16, 18, 20, 22, 24 |
 | [LiveRamp HyperMinHash](https://github.com/LiveRamp/HyperMinHash-java) | HyperMinHash | `0.2` | register width 4, 6, 8 |
 | [LiveRamp HyperMinHash](https://github.com/LiveRamp/HyperMinHash-java) | BetaMinHash | `0.2` | — |
@@ -194,7 +193,7 @@ Benchmark numbers are only meaningful in the context of the hardware they were c
         "url": "<repository link>",
         "sketch": "<sketch name>",
         "version": "<library version>"
-    }, ...
+    }, // remaining libraries
   ]
   "notes": "<anything else relevant>"
 }
