@@ -14,7 +14,6 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <main.class>io.github.bareboneslib.hll_benchmarks.SketchPerformanceTest</main.class>
-        <datasketches.version>5.0.0</datasketches.version>
     </properties>
 
     <dependencies>
@@ -29,7 +28,7 @@
         <dependency>
             <groupId>com.google.zetasketch</groupId>
             <artifactId>zetasketch</artifactId>
-            <version>0.2.0-SNAPSHOT</version>
+            <version>0.1.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -37,7 +36,7 @@
         <dependency>
             <groupId>org.apache.datasketches</groupId>
             <artifactId>datasketches-java</artifactId>
-            <version>${datasketches.version}</version>
+            <version>5.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/net.agkn/hll -->

@@ -63,9 +63,9 @@ public class ArgParser {
         System.out.println("Usage: java SketchPerformanceTest [options]");
         System.out.println();
         System.out.println("Options:");
-        System.out.println("  -i, --iterations <num>    Number of test iterations (default: 100000)");
-        System.out.println("  -s, --sizes <sizes>       Comma-separated sketch sizes (default: 1,10,100,1000,10000,100000,1000000)");
-        System.out.println("  -k, --lgk <num>           Log2 of K value (default: 12 for 4096 entries)");
+        System.out.println("  -i, --iterations <num>    Number of test iterations (recommended: 10000)");
+        System.out.println("  -s, --sizes <sizes>       Comma-separated sketch sizes");
+        System.out.println("  -k, --lgk <num>           Log2 of K value");
         System.out.println("  -h, --help                Show this help message");
         System.out.println();
         System.out.println("Examples:");

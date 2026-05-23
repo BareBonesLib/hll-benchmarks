@@ -204,6 +204,23 @@
             border-top: 1px solid var(--border);
             padding-top: 8px;
         }
+        .lib-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #eef6ff;
+            border: 1px solid #b3d9f7;
+            color: #1a5f8a;
+        }
+        body.dark .lib-badge {
+            background: #1a3a52;
+            border-color: #2a6496;
+            color: #7ec8f7;
+        }
+        body.dark .lib-badge a { color: #7ec8f7; }
         body.dark .meta-notes { color: #aaa; }
         /* status badge */
         .status-badge {
@@ -245,12 +262,12 @@
     <div class="input-section">
         <!-- Tab bar -->
         <div class="tab-bar">
-            <button class="tab-btn active" data-tab="presetTab">📂 Preset Benchmarks</button>
+            <button class="tab-btn active" data-tab="presetTab">📂 Reference Benchmarks</button>
             <button class="tab-btn"        data-tab="pasteTab">📋 Paste JSON</button>
             <button class="tab-btn"        data-tab="fileTab">🗂 Load File</button>
         </div>
 
-        <!-- ── Tab: Preset benchmarks ── -->
+        <!-- ── Tab: Reference benchmarks ── -->
         <div class="tab-panel active" id="presetTab">
             <div class="preset-header">
                 <select id="presetSelect">
@@ -262,6 +279,10 @@
             <div class="meta-card" id="metaCard">
                 <h3 id="metaTitle">Benchmark Details</h3>
                 <div class="meta-grid" id="metaGrid"></div>
+                <div class="meta-libs-row" id="metaLibsRow" style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;display:none;">
+                    <span style="font-size:13px;font-weight:700;margin-right:8px;">📦&nbsp;Libraries:</span>
+                    <div id="metaLibs" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                </div>
                 <div class="meta-notes" id="metaNotes" style="display:none;"></div>
             </div>
         </div>
@@ -304,7 +325,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 /* ────────────────────────────────────────────────
-   PRESET BENCHMARK LOADER
+   REFERENCE BENCHMARK LOADER
 ──────────────────────────────────────────────── */
 const METADATA_URL = 'benchmarks/metadata.json';
 const JSON_BASE    = 'benchmarks/json/';
@@ -328,7 +349,7 @@ async function loadMetadata() {
         });
         status.innerHTML = `<span class="status-badge">${(meta.benchmarks||[]).length} benchmark(s) available</span>`;
     } catch(err) {
-        sel.innerHTML = '<option value="">— Failed to load presets —</option>';
+        sel.innerHTML = '<option value="">— Failed to load reference benchmarks —</option>';
         status.innerHTML = `<span class="status-badge error">⚠ ${err.message}</span>`;
         console.error('Metadata load error:', err);
     }
@@ -350,6 +371,8 @@ document.getElementById('presetSelect').addEventListener('change', function() {
     const grid  = document.getElementById('metaGrid');
     const notes = document.getElementById('metaNotes');
     const title = document.getElementById('metaTitle');
+    const libsSection = document.getElementById('metaLibs');
+    const libsRow = document.getElementById('metaLibsRow');
 
     const commonFields = [
         { label: '📅 Date',   key: 'date'   },
@@ -390,8 +413,9 @@ document.getElementById('presetSelect').addEventListener('change', function() {
         'id', 'name', 'file', 'date', 'isNative',
         'cpu', 'memory', 'os', 'notes',
         'jvm', 'jvmFlags',
-        'compiler', 'cstd', 'compilerOptions',
+        'compiler', 'cstd', 'compilerOptions', 'libraries',
     ]);
+
     Object.entries(benchmark).forEach(([k, v]) => {
         if (standardKeys.has(k)) return;
         const div = document.createElement('div');
@@ -401,12 +425,27 @@ document.getElementById('presetSelect').addEventListener('change', function() {
         grid.appendChild(div);
     });
 
+    if (benchmark.libraries && benchmark.libraries.length) {
+        libsSection.innerHTML = benchmark.libraries.map(lib => {
+            const link = lib.url
+                ? `<a href="${lib.url}" target="_blank" rel="noopener" style="color:inherit;">${lib.name}</a>`
+                : lib.name;
+            return `<span class="lib-badge">${lib.sketch} | ${link} <strong>v${lib.version}</strong></span>`;
+        }).join('');
+        libsSection.style.display = 'flex';
+        libsRow.style.display = 'flex';
+    } else {
+        libsSection.style.display = 'none';
+        libsRow.style.display = 'none';
+    }
+
     if (benchmark.notes) {
         notes.textContent = '📝 ' + benchmark.notes;
         notes.style.display = 'block';
     } else {
         notes.style.display = 'none';
     }
+
     card.classList.add('visible');
 });
 
@@ -436,7 +475,7 @@ document.getElementById('loadPresetBtn').addEventListener('click', async () => {
     } catch(err) {
         container.innerHTML = '';
         status.innerHTML = `<span class="status-badge error">⚠ ${err.message}</span>`;
-        errorDiv.textContent = 'Error loading preset: ' + err.message;
+        errorDiv.textContent = 'Error loading reference benchmarks: ' + err.message;
         errorDiv.style.display = 'block';
         console.error(err);
     }
@@ -1370,7 +1409,7 @@ function createTotalTimeRankingChart(data) {
     const wrapper = document.createElement('div');
     wrapper.className = 'chart-wrapper';
     wrapper.innerHTML = `
-      <h2 style="text-align:center;">Total Processing Time (Formula Components)</h2>
+      <h2 style="text-align:center;">Total Processing Time Based on Spark Aggregation (Formula Components)</h2>
       <p style="text-align:center;font-size:12px;margin-top:-5px;">
         Rxavg(u) + Kx(R/numTasks)xavg(m) + SWxavg(s) + SWxavg(d) + SWxavg(m) + Wxavg(c)
       </p>
@@ -1420,7 +1459,7 @@ function createTotalTimeRankingChart(data) {
         return results;
     }
 
-    const defaults = { R: data[0]?.numSketches || 1000, W: 1, SW: 1, numTasks: 1, K: 3.0197 };
+    const defaults = { R: 94206096161, W: 1702264027, SW: 73453299147, numTasks: 47147, K: 3.0197 };
     for (const [k, v] of Object.entries(defaults))
         document.getElementById('input' + (k === 'numTasks' ? 'Tasks' : k.toUpperCase())).value = v;
 
